@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    name: Lint, types, fences
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test
+
+      # Single-source-of-math assertion (v3.1 §7): the app must contain NO
+      # second pace/day formula. Pace math exists only in Postgres.
+      - name: No-second-formula grep
+        run: |
+          # match the exponentiation OPERATOR (operand ** operand), not JSDoc /** comments
+          if grep -rnE 'Math\.pow|[0-9A-Za-z_)] ?\*\* ?[0-9A-Za-z_(]' src/ --include='*.ts' --include='*.tsx'; then
+            echo "::error::Found exponentiation in app code — pace math is canonical in Postgres (fn_pace_target)."
+            exit 1
+          fi
+
+      # Dormant-table gate (v3.1 §10): schema-ready tables must have ZERO app
+      # references until their activation criteria are met. Touching one here
+      # is a signal to consciously activate it, not to slip it in.
+      # SANCTIONED EXCEPTION: the export route — the export contract covers ALL
+      # user data, dormant tables included.
+      - name: Dormant-table reference gate
+        run: |
+          set -e
+          DORMANT="experiments sync_runs notification_log target_history"
+          FAIL=0
+          for t in $DORMANT; do
+            if grep -rn --include='*.ts' --include='*.tsx' \
+                 --exclude-dir=node_modules \
+                 "[\"'\`]${t}[\"'\`]" src/ \
+                 | grep -v 'src/app/api/export/route.ts'; then
+              echo "::error::Dormant table '${t}' is referenced in app code. Activate it deliberately (see phasing doc) or remove the reference."
+              FAIL=1
+            fi
+          done
+          exit $FAIL
+
+  db:
+    name: Migrations, functions, RLS sweep
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      TEST_DB: growth_os_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run database verification harness
+        run: bash supabase/tests/run.sh
+
+  build:
+    name: Next.js production build
+    runs-on: ubuntu-latest
+    needs: [verify]
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
