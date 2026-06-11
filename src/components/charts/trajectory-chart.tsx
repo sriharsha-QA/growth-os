@@ -38,7 +38,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       padding: "10px 14px",
       fontSize: "12px",
       fontFamily: "var(--font-mono)",
-      boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+      boxShadow: "0 2px 12px color-mix(in srgb, var(--text) 8%, transparent)",
     }}>
       <div style={{ color: "var(--text3)", marginBottom: "6px", fontFamily: "var(--font-sans)" }}>
         Day {p.day} · {p.date}
@@ -65,7 +65,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   );
 }
 
-export function TrajectoryChart({ rows, trackables, annotations, durationDays: _durationDays }: Props) {
+export function TrajectoryChart({ rows, trackables, annotations }: Props) {
   const withData = useMemo(
     () => trackables.filter((t) => rows.some((r) => r.trackable_id === t.id)),
     [rows, trackables]

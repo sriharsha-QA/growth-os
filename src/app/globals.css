@@ -13,13 +13,12 @@
   --color-info:         #2563eb;
   --color-danger:       #b3261e;
   --color-danger-light: #fcebeb;
-
   --font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* ── Light mode ── */
+/* ── Semantic tokens ── */
 :root {
   --bg:        #fafaf7;
   --bg2:       #f2f2ef;
@@ -44,36 +43,34 @@
   --info-t:    #1e40af;
 }
 
-/* ── Dark mode ── */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg:        #0d0f14;
-    --bg2:       #14161e;
+    --bg2:       #13151d;
     --bg3:       #1a1c26;
     --surface:   #161820;
     --border:    #252730;
     --border2:   #32343f;
     --text:      #eeecea;
     --text2:     #9a9a96;
-    --text3:     #64686f;
+    --text3:     #5e6168;
     --accent:    #19b882;
     --accent-bg: #082b1e;
     --accent-t:  #4dd8a4;
     --warn:      #f59e0b;
-    --warn-bg:   #221b08;
+    --warn-bg:   #201908;
     --warn-t:    #fbbf24;
     --danger:    #f87171;
-    --danger-bg: #280d0d;
+    --danger-bg: #250d0d;
     --danger-t:  #fca5a5;
     --info:      #60a5fa;
-    --info-bg:   #0d1a2e;
+    --info-bg:   #0c1827;
     --info-t:    #93c5fd;
   }
 }
 
 /* ── Base ── */
 html { scroll-behavior: smooth; }
-
 body {
   background: var(--bg);
   color: var(--text);
@@ -82,18 +79,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Safe area for mobile (notch/home bar) ── */
-.safe-bottom {
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
-}
-
-/* ── Tailwind Utilities using CSS vars ── */
-.bg-surface   { background: var(--surface); }
-.bg-bg        { background: var(--bg); }
-.text-text     { color: var(--text); }
-.text-text2    { color: var(--text2); }
-.text-text3    { color: var(--text3); }
-.border-border { border-color: var(--border); }
+/* ── Tailwind @theme overrides so old class names still work ── */
+.text-muted     { color: var(--text3); }
+.text-ink       { color: var(--text); }
+.bg-paper       { background: var(--bg); }
+.border-line    { border-color: var(--border); }
+.text-accent    { color: var(--accent); }
+.text-danger    { color: var(--danger); }
+.text-warn      { color: var(--warn); }
+.bg-accent\/5   { background: var(--accent-bg); }
+.bg-accent\/10  { background: var(--accent-bg); }
+.bg-warn\/5     { background: var(--warn-bg); }
+.bg-warn\/10    { background: var(--warn-bg); }
+.border-warn\/40 { border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.border-accent\/30 { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.border-accent\/40 { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.text-accent { color: var(--accent); }
+.bg-ink\/5  { background: color-mix(in srgb, var(--text) 5%, transparent); }
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
