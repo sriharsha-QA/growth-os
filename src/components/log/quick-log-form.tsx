@@ -27,6 +27,7 @@ interface Props {
   todayValues: { trackableId: string; metricType: MetricType; value: number }[];
   lastKnown: Record<string, { value: number; date: string }>;
   todayActivities: { trackableId: string; activityKey: string; count: number }[];
+  lastSyncRuns: { provider: string; finishedAt: string }[];
 }
 
 export function QuickLogForm({
@@ -36,6 +37,7 @@ export function QuickLogForm({
   todayValues,
   lastKnown,
   todayActivities,
+  lastSyncRuns,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -137,20 +139,39 @@ export function QuickLogForm({
               <div key={t.id} className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
                   <Label htmlFor={`v-${t.id}`}>{t.name}</Label>
-                  {prior && (
-                    <span className="font-mono text-[11px] tabular-nums text-muted">
-                      was {prior.value.toLocaleString("en-IN")} on {prior.date.slice(5)}
-                    </span>
-                  )}
+                  {(() => {
+                    const platform = (t.config as { platform?: string }).platform ?? "";
+                    const sync = platform ? lastSyncRuns.find((r) => r.provider === platform) : null;
+                    const todayVal = todayValues.find((v) => v.trackableId === t.id && v.metricType === t.primary_metric);
+                    if (sync && todayVal) {
+                      // Today's value was auto-synced
+                      const syncTime = new Date(sync.finishedAt);
+                      const hrs = Math.round((Date.now() - syncTime.getTime()) / 3600000);
+                      return (
+                        <span style={{ fontSize: "10px", color: "var(--accent)", fontWeight: 600, fontFamily: "var(--font-mono)" }}>
+                          ⟳ synced {hrs < 1 ? "just now" : `${hrs}h ago`}
+                        </span>
+                      );
+                    }
+                    if (prior && !(values[t.id] ?? "")) {
+                      return (
+                        <span className="font-mono text-[11px] tabular-nums text-muted">
+                          last: {prior.value.toLocaleString("en-IN")} ({prior.date.slice(5)})
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 <Input
                   id={`v-${t.id}`}
                   inputMode="decimal"
                   autoComplete="off"
-                  placeholder={`${t.unit} count`}
+                  autoFocus={trackables.indexOf(t) === 0}
+                  placeholder={prior ? String(prior.value) : `${t.unit}`}
                   value={values[t.id] ?? ""}
                   onChange={(e) => setValues((m) => ({ ...m, [t.id]: e.target.value }))}
-                  className="font-mono text-base"
+                  className="h-12 font-mono text-lg"
                 />
               </div>
             );
@@ -158,32 +179,38 @@ export function QuickLogForm({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="space-y-4 pt-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">
-            Inputs (what you did today)
-          </p>
-          {trackables.flatMap((t) => {
-            const platform = (t.config as { platform?: string }).platform ?? "";
-            return (ACTIVITY_FIELDS[platform] ?? []).map((f) => (
-              <div key={`${t.id}:${f.key}`} className="flex items-center justify-between gap-3">
-                <Label htmlFor={`a-${t.id}-${f.key}`} className="text-sm font-normal text-ink">
-                  {f.label}
-                </Label>
-                <Input
-                  id={`a-${t.id}-${f.key}`}
-                  inputMode="numeric"
-                  className="h-9 w-24 text-right font-mono"
-                  value={acts[`${t.id}:${f.key}`] ?? ""}
-                  onChange={(e) =>
-                    setActs((m) => ({ ...m, [`${t.id}:${f.key}`]: e.target.value }))
-                  }
-                />
-              </div>
-            ));
-          })}
-        </CardContent>
-      </Card>
+      {/* Only render activity card if there are actual fields to show */}
+      {trackables.some((t) => {
+        const platform = (t.config as { platform?: string }).platform ?? "";
+        return (ACTIVITY_FIELDS[platform] ?? []).length > 0;
+      }) && (
+        <Card>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              Inputs (what you did today)
+            </p>
+            {trackables.flatMap((t) => {
+              const platform = (t.config as { platform?: string }).platform ?? "";
+              return (ACTIVITY_FIELDS[platform] ?? []).map((f) => (
+                <div key={`${t.id}:${f.key}`} className="flex items-center justify-between gap-3">
+                  <Label htmlFor={`a-${t.id}-${f.key}`} className="text-sm font-normal text-ink">
+                    {f.label}
+                  </Label>
+                  <Input
+                    id={`a-${t.id}-${f.key}`}
+                    inputMode="numeric"
+                    className="h-10 w-28 text-right font-mono text-base"
+                    value={acts[`${t.id}:${f.key}`] ?? ""}
+                    onChange={(e) =>
+                      setActs((m) => ({ ...m, [`${t.id}:${f.key}`]: e.target.value }))
+                    }
+                  />
+                </div>
+              ));
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       {outlierPrompt && (
         <div className="space-y-2 rounded-xl border border-warn/40 bg-warn/5 p-3">
@@ -208,7 +235,7 @@ export function QuickLogForm({
         disabled={pending || savedFlash}
         onClick={() => submit(false)}
       >
-        {savedFlash ? "Saved ✓" : pending ? "Saving…" : `Save Day · ${today}`}
+        {savedFlash ? "Saved ✓" : pending ? "Saving…" : "Save"}
       </Button>
     </div>
   );

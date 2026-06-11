@@ -52,7 +52,7 @@ export default async function LogPage({
   const ids = (trackables ?? []).map((t) => t.id);
 
   // today's values (edit mode) + most recent prior values (prefill/outlier hints)
-  const [{ data: todayRows }, { data: priorRows }, { data: todayActs }] = await Promise.all([
+  const [{ data: todayRows }, { data: priorRows }, { data: todayActs }, { data: syncRuns }] = await Promise.all([
     supabase
       .from("metric_snapshots")
       .select("trackable_id, metric_type, value")
@@ -70,6 +70,13 @@ export default async function LogPage({
       .select("trackable_id, activity_key, count")
       .in("trackable_id", ids)
       .eq("local_date", logDate),
+    // Last successful sync per provider — tells user if today's prefill is auto-synced
+    supabase
+      .from("sync_runs")
+      .select("provider, finished_at, summary")
+      .eq("status", "ok")
+      .order("finished_at", { ascending: false })
+      .limit(10),
   ]);
 
   const lastKnown: Record<string, { value: number; date: string }> = {};
@@ -80,17 +87,19 @@ export default async function LogPage({
 
   return (
     <div className="mx-auto max-w-xl">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-        {isBackfill ? "Backfill" : "Daily log"} · {logDate}
-      </p>
-      <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight">
-        {isBackfill ? `Numbers for ${logDate}` : "Today's numbers"}
-      </h1>
-      <p className="mt-1 text-sm text-muted">
-        {isBackfill
-          ? "Filling a missed day. Pace and streak recompute once it's saved."
-          : "Open each app, copy the number, paste it here. Formats like 1,247 and 1.2k both work."}
-      </p>
+      <div style={{ marginBottom: "4px" }}>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: "11px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text3)" }}>
+          {isBackfill ? `Backfill · ${logDate}` : logDate}
+        </p>
+        <h1 style={{ fontSize: "22px", fontWeight: 700, color: "var(--text)", marginTop: "4px", letterSpacing: "-0.01em" }}>
+          {isBackfill ? "Fill a missed day" : "Log today"}
+        </h1>
+        {isBackfill && (
+          <p style={{ fontSize: "13px", color: "var(--text3)", marginTop: "4px" }}>
+            Pace and streak recalculate automatically once saved.
+          </p>
+        )}
+      </div>
       <div className="mt-6">
         <QuickLogForm
           challengeId={challenge.id}
@@ -106,6 +115,10 @@ export default async function LogPage({
             trackableId: a.trackable_id,
             activityKey: a.activity_key,
             count: a.count,
+          }))}
+          lastSyncRuns={(syncRuns ?? []).map((r) => ({
+            provider: r.provider as string,
+            finishedAt: r.finished_at as string,
           }))}
         />
       </div>
