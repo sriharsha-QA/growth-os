@@ -27,7 +27,6 @@ interface Props {
   todayValues: { trackableId: string; metricType: MetricType; value: number }[];
   lastKnown: Record<string, { value: number; date: string }>;
   todayActivities: { trackableId: string; activityKey: string; count: number }[];
-  lastSyncRuns: { provider: string; finishedAt: string }[];
 }
 
 export function QuickLogForm({
@@ -37,7 +36,6 @@ export function QuickLogForm({
   todayValues,
   lastKnown,
   todayActivities,
-  lastSyncRuns,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -139,29 +137,11 @@ export function QuickLogForm({
               <div key={t.id} className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
                   <Label htmlFor={`v-${t.id}`}>{t.name}</Label>
-                  {(() => {
-                    const platform = (t.config as { platform?: string }).platform ?? "";
-                    const sync = platform ? lastSyncRuns.find((r) => r.provider === platform) : null;
-                    const todayVal = todayValues.find((v) => v.trackableId === t.id && v.metricType === t.primary_metric);
-                    if (sync && todayVal) {
-                      // Today's value was auto-synced
-                      const syncTime = new Date(sync.finishedAt);
-                      const hrs = Math.round((Date.now() - syncTime.getTime()) / 3600000);
-                      return (
-                        <span style={{ fontSize: "10px", color: "var(--accent)", fontWeight: 600, fontFamily: "var(--font-mono)" }}>
-                          ⟳ synced {hrs < 1 ? "just now" : `${hrs}h ago`}
-                        </span>
-                      );
-                    }
-                    if (prior && !(values[t.id] ?? "")) {
-                      return (
-                        <span className="font-mono text-[11px] tabular-nums text-muted">
-                          last: {prior.value.toLocaleString("en-IN")} ({prior.date.slice(5)})
-                        </span>
-                      );
-                    }
-                    return null;
-                  })()}
+                  {prior && !(values[t.id] ?? "") && (
+                    <span className="font-mono text-[11px] tabular-nums text-muted">
+                      last: {prior.value.toLocaleString("en-IN")} ({prior.date.slice(5)})
+                    </span>
+                  )}
                 </div>
                 <Input
                   id={`v-${t.id}`}

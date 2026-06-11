@@ -70,8 +70,8 @@ export async function createChallenge(raw: unknown): Promise<ActionResult> {
 
 /**
  * Basic recalibration (v3.1 §8, P1 scope): direction-aware target edit.
- * The DB trigger mirrors every change into target_history; if a reason is
- * given, it's attached to the newest history row. Guided recalibration is P3.
+ * The DB trigger (fn_record_target_change) automatically records history.
+ * Reason annotation and guided recalibration are P3.
  */
 export async function updateTarget(raw: unknown): Promise<ActionResult> {
   const parsed = updateTargetInput.safeParse(raw);
@@ -110,18 +110,8 @@ export async function updateTarget(raw: unknown): Promise<ActionResult> {
     .eq("id", t.id);
   if (error) return { ok: false, error: error.message, code: "db" };
 
-  if (parsed.data.reason) {
-    const { data: hist } = await supabase
-      .from("target_history")
-      .select("id")
-      .eq("trackable_id", t.id)
-      .order("changed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (hist) {
-      await supabase.from("target_history").update({ reason: parsed.data.reason }).eq("id", hist.id);
-    }
-  }
+  // target_history rows are written automatically by the fn_record_target_change trigger.
+  // Reason annotation (P3) will be added when the recalibration UI is built.
 
   revalidatePath("/dashboard");
   revalidatePath("/settings");

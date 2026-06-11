@@ -52,7 +52,7 @@ export default async function LogPage({
   const ids = (trackables ?? []).map((t) => t.id);
 
   // today's values (edit mode) + most recent prior values (prefill/outlier hints)
-  const [{ data: todayRows }, { data: priorRows }, { data: todayActs }, { data: syncRuns }] = await Promise.all([
+  const [{ data: todayRows }, { data: priorRows }, { data: todayActs }] = await Promise.all([
     supabase
       .from("metric_snapshots")
       .select("trackable_id, metric_type, value")
@@ -70,13 +70,6 @@ export default async function LogPage({
       .select("trackable_id, activity_key, count")
       .in("trackable_id", ids)
       .eq("local_date", logDate),
-    // Last successful sync per provider — tells user if today's prefill is auto-synced
-    supabase
-      .from("sync_runs")
-      .select("provider, finished_at, summary")
-      .eq("status", "ok")
-      .order("finished_at", { ascending: false })
-      .limit(10),
   ]);
 
   const lastKnown: Record<string, { value: number; date: string }> = {};
@@ -115,10 +108,6 @@ export default async function LogPage({
             trackableId: a.trackable_id,
             activityKey: a.activity_key,
             count: a.count,
-          }))}
-          lastSyncRuns={(syncRuns ?? []).map((r) => ({
-            provider: r.provider as string,
-            finishedAt: r.finished_at as string,
           }))}
         />
       </div>

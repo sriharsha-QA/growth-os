@@ -5,15 +5,20 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   verify:
     name: Lint, types, fences
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -73,6 +78,8 @@ jobs:
       TEST_DB: growth_os_ci
     steps:
       - uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       - name: Run database verification harness
         run: bash supabase/tests/run.sh
 
@@ -85,9 +92,11 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
     steps:
       - uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run build
