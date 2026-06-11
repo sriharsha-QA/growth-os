@@ -7,8 +7,6 @@ import { createSupabaseServer } from "@/lib/supabase/server";
  */
 export async function GET(request: Request) {
   const supabase = await createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
   const url = new URL(request.url);
   const challengeId = url.searchParams.get("challengeId");

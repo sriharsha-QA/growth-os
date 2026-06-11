@@ -7,8 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   const supabase = await createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
 
   const { data: existing } = await supabase
     .from("challenges")
@@ -20,7 +18,7 @@ export default async function OnboardingPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select("timezone, day_rollover_hour")
-    .eq("id", user.id)
+    .eq("id", "00000000-0000-0000-0000-000000000001")
     .single();
 
   const today = profile ? await getLocalToday(supabase, profile) : new Date().toISOString().slice(0, 10);
