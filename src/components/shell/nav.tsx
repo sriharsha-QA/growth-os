@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, PenLine, Settings } from "lucide-react";
+import { LayoutDashboard, PenLine, Settings, BarChart2 } from "lucide-react";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/log",       label: "Log",       icon: PenLine },
+  { href: "/review",    label: "Review",    icon: BarChart2 },
   { href: "/settings",  label: "Settings",  icon: Settings },
 ];
 

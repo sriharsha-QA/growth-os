@@ -3,8 +3,9 @@ import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { getLocalToday } from "@/lib/domain/day";
 import { computeStreak, type DailyProgressRow, type Trackable } from "@/lib/domain/types";
-import { computeForecast, computeFocus } from "@/lib/domain/forecast";
+import { computeForecast, computeFocus, computeMilestones, computeRecovery } from "@/lib/domain/forecast";
 import { CommandHeader } from "@/components/dashboard/command-header";
+import { ConsistencyHeatmap } from "@/components/dashboard/consistency-heatmap";
 import { TrackableCard } from "@/components/dashboard/trackable-card";
 import { ForecastCard } from "@/components/dashboard/forecast-card";
 import { DailyFocusCard } from "@/components/dashboard/daily-focus-card";
@@ -72,12 +73,16 @@ export default async function DashboardPage() {
   const yesterdayKey  = yesterday.toISOString().slice(0, 10);
   const missedYesterday = yesterdayKey >= challenge.start_date && !checkinDates.includes(yesterdayKey);
 
-  const forecast       = computeForecast(latestByTrackable, allTrackables, dayIndex, challenge.duration_days);
-  const focus          = computeFocus(latestByTrackable, allTrackables);
-
   const pctDone        = Math.round((Math.min(dayIndex, challenge.duration_days) / challenge.duration_days) * 100);
   const daysRemaining  = Math.max(0, challenge.duration_days - dayIndex);
   const nextMilestone  = streak < 7 ? 7 : streak < 14 ? 14 : streak < 21 ? 21 : streak < 30 ? 30 : Math.ceil(streak / 7) * 7 + 7;
+
+  const forecast       = computeForecast(latestByTrackable, allTrackables, dayIndex, challenge.duration_days);
+  const focus          = computeFocus(latestByTrackable, allTrackables);
+  const recovery       = computeRecovery(latestByTrackable, allTrackables, daysRemaining);
+  void recovery; // surfaced in next trackable card iteration
+  const milestones     = computeMilestones(rows, allTrackables, latestByTrackable);
+  const recentMilestones = milestones.filter((m) => m.crossedRecently);
 
   return (
     <>
@@ -95,8 +100,8 @@ export default async function DashboardPage() {
         {/* ─── Q1: Did I log today? ─────────────────────────────────── */}
         <CommandHeader
           challengeName={challenge.name}
-          dayIndex={dayIndex}
           durationDays={challenge.duration_days}
+          dayIndex={dayIndex}
           daysRemaining={daysRemaining}
           pctDone={pctDone}
           streak={streak}
@@ -166,6 +171,46 @@ export default async function DashboardPage() {
           <div className="intel-grid">
             <DailyFocusCard focus={focus} loggedToday={loggedToday} />
             <ForecastCard forecast={forecast} dayIndex={dayIndex} durationDays={challenge.duration_days} />
+          </div>
+        )}
+
+        {/* Consistency heatmap */}
+        <ConsistencyHeatmap
+          checkinDates={new Set(checkinDates)}
+          challengeStartDate={challenge.start_date}
+          durationDays={challenge.duration_days}
+          today={today}
+        />
+
+        {/* Recent milestone notifications */}
+        {recentMilestones.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {recentMilestones.map((m) => (
+              <div key={`${m.trackableId}-${m.value}`} style={{
+                background: "var(--accent-bg)",
+                border: "0.5px solid var(--accent)",
+                borderRadius: "12px",
+                padding: "12px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}>
+                <span style={{ fontSize: "18px" }}>🏁</span>
+                <div>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--accent)" }}>
+                    Milestone reached
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--accent-t)", marginTop: "1px" }}>
+                    {m.trackableName} · {m.label}
+                    {m.crossedDate && (
+                      <span style={{ color: "var(--text3)", marginLeft: "6px" }}>
+                        on {m.crossedDate.slice(5)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
