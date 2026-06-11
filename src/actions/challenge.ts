@@ -11,9 +11,17 @@ import {
 } from "@/lib/domain/schemas";
 
 /**
- * Challenge wizard commit (v3.1 P1-1): challenge + trackables + pillars.
- * Re-entry safe: an existing active challenge short-circuits to the dashboard;
- * a partial failure deletes the challenge row, cascading children.
+ * Challenge wizard commit (v3.1 P1-1, D01 + D04 fixes).
+ *
+ * D01 — Idempotency: every submit carries a client-generated clientToken UUID.
+ *   The DB has a UNIQUE constraint on challenges.client_token (M13).
+ *   fn_create_challenge checks for an existing row with that token first and
+ *   returns its id — duplicate tab submits never create a second challenge.
+ *
+ * D04 — Atomicity: all four writes (challenge + trackables + pillars +
+ *   weekly_target) run inside fn_create_challenge (PL/pgSQL), which executes
+ *   in a single implicit DB transaction. Any failure rolls back the whole unit.
+ *   No compensating deletes in TypeScript.
  */
 export async function createChallenge(raw: unknown): Promise<ActionResult> {
   const parsed = createChallengeInput.safeParse(raw);
@@ -27,29 +35,8 @@ export async function createChallenge(raw: unknown): Promise<ActionResult> {
   if (!auth.user) return { ok: false, error: "Not signed in", code: "unauthenticated" };
   const userId = auth.user.id;
 
-  const { data: existing } = await supabase
-    .from("challenges")
-    .select("id")
-    .eq("status", "active")
-    .maybeSingle();
-  if (existing) redirect("/dashboard");
-
-  const { data: challenge, error: cErr } = await supabase
-    .from("challenges")
-    .insert({
-      user_id: userId,
-      name: input.name,
-      start_date: input.startDate,
-      duration_days: input.durationDays,
-      pacing_model: input.pacingModel,
-    })
-    .select("id")
-    .single();
-  if (cErr || !challenge) return { ok: false, error: cErr?.message ?? "Insert failed", code: "db" };
-
-  const trackableRows = input.trackables.map((t, i) => ({
-    user_id: userId,
-    challenge_id: challenge.id,
+  // Build the trackables jsonb array exactly as fn_create_challenge expects it.
+  const trackablesJson = input.trackables.map((t) => ({
     name: t.name,
     kind: t.kind,
     direction: t.direction,
@@ -58,28 +45,25 @@ export async function createChallenge(raw: unknown): Promise<ActionResult> {
     baseline_value: t.baseline,
     target_value: t.target,
     config: t.platform ? { platform: t.platform } : {},
-    sort_order: i + 1,
   }));
-  const { error: tErr } = await supabase.from("trackables").insert(trackableRows);
 
-  if (!tErr && input.pillars.length > 0) {
-    await supabase.from("content_pillars").insert(
-      input.pillars.map((name) => ({ user_id: userId, challenge_id: challenge.id, name }))
-    );
-  }
+  const { data: challengeId, error: rpcErr } = await supabase.rpc(
+    "fn_create_challenge",
+    {
+      p_user_id:       userId,
+      p_client_token:  input.clientToken,
+      p_name:          input.name,
+      p_start_date:    input.startDate,
+      p_duration_days: input.durationDays,
+      p_pacing_model:  input.pacingModel,
+      p_trackables:    JSON.stringify(trackablesJson),
+      p_pillars:       input.pillars,
+      p_weekly_target: input.weeklyPostTarget ?? null,
+    }
+  );
 
-  if (!tErr && input.weeklyPostTarget !== undefined) {
-    await supabase.from("weekly_targets").insert({
-      user_id: userId,
-      challenge_id: challenge.id,
-      target_count: input.weeklyPostTarget,
-    });
-  }
-
-  if (tErr) {
-    // compensating cleanup: cascade removes any partial children
-    await supabase.from("challenges").delete().eq("id", challenge.id);
-    return { ok: false, error: tErr.message, code: "db" };
+  if (rpcErr || !challengeId) {
+    return { ok: false, error: rpcErr?.message ?? "Failed to create challenge", code: "db" };
   }
 
   revalidatePath("/dashboard");

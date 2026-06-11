@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { createChallenge } from "@/actions/challenge";
 import { parseMetricInput } from "@/lib/domain/schemas";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,10 @@ const PRESETS: PresetRow[] = [
 ];
 
 export function OnboardingWizard({ defaultStartDate }: { defaultStartDate: string }) {
+  // Generated once when the wizard mounts. Stable across re-renders, step
+  // navigation, and network retries. The DB UNIQUE constraint on client_token
+  // ensures duplicate submits return the same challenge. (D01 fix)
+  const clientToken = useRef(crypto.randomUUID());
   const [step, setStep] = useState(0);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -90,6 +94,7 @@ export function OnboardingWizard({ defaultStartDate }: { defaultStartDate: strin
         trackables,
         pillars: pillars.split(",").map((p) => p.trim()).filter(Boolean).slice(0, 8),
         weeklyPostTarget: parseMetricInput(postsPerWeek) ?? undefined,
+        clientToken: clientToken.current,
       });
       if (res && !res.ok) setError(res.error);
     });

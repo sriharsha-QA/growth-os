@@ -65,6 +65,13 @@ export const createChallengeInput = z.object({
   pillars: z.array(z.string().min(1).max(40)).max(8).default([]),
   /** Challenge-level publishing target (weekly_targets row, trackable/format null). */
   weeklyPostTarget: z.number().int().min(0).max(100).optional(),
+  /**
+   * Client-generated UUID for idempotency (D01 fix).
+   * The wizard generates this once on mount; duplicate tab submits or network
+   * retries with the same token return the existing challenge instead of
+   * creating a second one. Backed by UNIQUE on challenges.client_token (M13).
+   */
+  clientToken: z.string().uuid(),
 }).superRefine((v, ctx) => {
   v.trackables.forEach((t, i) => {
     const ok = t.direction === "increase" ? t.target >= t.baseline : t.target <= t.baseline;

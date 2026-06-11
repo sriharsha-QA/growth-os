@@ -24,6 +24,9 @@ $PSQL -f supabase/tests/01_functions_and_triggers.sql
 echo "→ suite 02: two-user RLS sweep"
 $PSQL -f supabase/tests/02_rls_two_user.sql
 
+echo "→ suite 03: challenge atomicity (D01 + D04)"
+$PSQL -f supabase/tests/03_challenge_atomicity.sql
+
 echo "→ seed smoke"
 $PSQL -f supabase/seed.sql
 $PSQL -c "select count(*) as snapshot_rows from public.metric_snapshots;" \

@@ -49,6 +49,7 @@ test("createChallengeInput: direction-aware target refinement", () => {
   const mk = (direction: "increase" | "decrease", baseline: number, target: number) => ({
     name: "Sprint",
     startDate: "2026-06-11",
+    clientToken: "9f8b3c1e-0000-4000-8000-000000000099",  // required by D01 fix (M13)
     trackables: [
       {
         name: "X",
@@ -112,6 +113,20 @@ test("classifyPace: increase thresholds", () => {
   assert.equal(classifyPace(row({ value: 550, pace_target: 550 })), "on_track");
   assert.equal(classifyPace(row({ value: 400, pace_target: 550 })), "recoverable"); // ratio ≈0.67
   assert.equal(classifyPace(row({ value: 200, pace_target: 550 })), "recalibrate"); // ratio ≈0.22
+});
+
+test("createChallengeInput: clientToken is required and must be a UUID (D01)", () => {
+  const base = {
+    name: "Sprint",
+    startDate: "2026-06-11",
+    trackables: [{ name: "X", unit: "u", primaryMetric: "value", direction: "increase", kind: "custom", baseline: 0, target: 100 }],
+  };
+  // missing clientToken → invalid
+  assert.equal(createChallengeInput.safeParse(base).success, false);
+  // non-UUID string → invalid
+  assert.equal(createChallengeInput.safeParse({ ...base, clientToken: "not-a-uuid" }).success, false);
+  // valid UUID → valid
+  assert.equal(createChallengeInput.safeParse({ ...base, clientToken: "9f8b3c1e-0000-4000-8000-000000000001" }).success, true);
 });
 
 test("classifyPace: decrease direction normalizes (8-kg test)", () => {
