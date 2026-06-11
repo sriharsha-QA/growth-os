@@ -18,7 +18,7 @@ export async function saveQuickLog(raw: unknown): Promise<ActionResult<{ localDa
   const input = parsed.data;
 
   const supabase = await createSupabaseServer();
-  const userId = "00000000-0000-0000-0000-000000000001";
+  const userId = "f67c40ae-4dad-4a61-bb16-f2e721dd29f5";
 
   const { data: profile } = await supabase
     .from("profiles")

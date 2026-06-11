@@ -14,7 +14,7 @@ export default async function ReviewPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, timezone, day_rollover_hour")
-    .eq("id", "00000000-0000-0000-0000-000000000001")
+    .eq("id", "f67c40ae-4dad-4a61-bb16-f2e721dd29f5")
     .single();
   if (!profile) redirect("/login");
 
