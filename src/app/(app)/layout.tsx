@@ -1,12 +1,8 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { signOut } from "@/actions/challenge";
 import { MobileTabBar, NavLinks } from "@/components/shell/nav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createSupabaseServer();
-
   return (
     <div className="min-h-dvh pb-20 md:pb-0">
       <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">

@@ -146,3 +146,90 @@ test("classifyPace: decrease direction normalizes (8-kg test)", () => {
   assert.equal(dec(82.5, 81), "recoverable"); // 1.5 of expected 3 = 0.5
   assert.equal(dec(83.8, 81), "recalibrate");
 });
+
+// ---------- Forecast computation ----------
+import { computeForecast, computeFocus } from "../../src/lib/domain/forecast.ts";
+import type { Trackable } from "../../src/lib/domain/types.ts";
+
+function makeRow(overrides: Partial<DailyProgressRow>): DailyProgressRow {
+  return {
+    user_id: "u", challenge_id: "c", trackable_id: "t1",
+    name: "LinkedIn", unit: "followers", direction: "increase",
+    baseline_value: 100, target_value: 5000,
+    local_date: "2026-06-11", day_index: 11,
+    value: 1500, delta: 40,
+    pace_target: 700, pct_of_target: 0.28,
+    velocity_7d: 50, required_velocity: 40,
+    ...overrides,
+  };
+}
+
+function makeTrackable(overrides: Partial<Trackable> = {}): Trackable {
+  return {
+    id: "t1", challenge_id: "c", name: "LinkedIn",
+    kind: "platform_account", direction: "increase",
+    unit: "followers", primary_metric: "followers",
+    baseline_value: 100, target_value: 5000,
+    config: {}, sync_enabled: false, sort_order: 1,
+    ...overrides,
+  };
+}
+
+test("computeForecast: ahead when velocity exceeds requirement", () => {
+  const t = makeTrackable();
+  const row = makeRow({ velocity_7d: 50, required_velocity: 40, value: 1500 });
+  const latest = new Map([["t1", row]]);
+  // 79 days remaining × 50/day = 3950 + 1500 = 5450 projected > 5000 target
+  const result = computeForecast(latest, [t], 11, 90);
+  assert.equal(result.overallConfidence, "will_exceed");
+  assert.equal(result.trackables[0].projected, 5450);
+  assert.equal(result.trackables[0].surplus, 450);
+  assert.equal(result.aheadCount, 1);
+  assert.equal(result.offTrackCount, 0);
+});
+
+test("computeForecast: off_track when no data", () => {
+  const t = makeTrackable();
+  const latest = new Map<string, DailyProgressRow>();
+  const result = computeForecast(latest, [t], 11, 90);
+  assert.equal(result.overallConfidence, "off_track");
+  assert.equal(result.trackables[0].projected, 100); // stays at baseline
+  assert.ok(result.trackables[0].surplus < 0); // deficit
+});
+
+test("computeForecast: decrease direction — surplus positive when projected below target", () => {
+  const t = makeTrackable({ direction: "decrease", baseline_value: 84, target_value: 78 });
+  // velocity -0.07/day (losing weight) × 79 days = -5.53 → 80.47 - 2.47 from target = surplus
+  const row = makeRow({
+    trackable_id: "t1", direction: "decrease",
+    baseline_value: 84, target_value: 78,
+    value: 82, velocity_7d: -0.08, required_velocity: -0.05,
+  });
+  const latest = new Map([["t1", row]]);
+  const result = computeForecast(latest, [t], 11, 90);
+  // 82 + (-0.08 × 79) = 82 - 6.32 = 75.68 → below 78 target = surplus positive
+  const f = result.trackables[0];
+  assert.ok(f.surplus > 0, `expected surplus > 0, got ${f.surplus}`);
+  assert.equal(f.confidence, "will_exceed");
+});
+
+test("computeFocus: identifies most at-risk metric correctly", () => {
+  const t1 = makeTrackable({ id: "t1", name: "LinkedIn" });
+  const t2 = makeTrackable({ id: "t2", name: "Medium" });
+  const latest = new Map([
+    ["t1", makeRow({ trackable_id: "t1", value: 1500, pace_target: 700 })],  // ahead
+    ["t2", makeRow({ trackable_id: "t2", name: "Medium", value: 200, pace_target: 700 })],  // behind
+  ]);
+  const result = computeFocus(latest, [t1, t2]);
+  assert.equal(result.mostAtRisk?.name, "Medium");
+  assert.equal(result.behindCount, 1);
+  assert.equal(result.aheadCount, 1);
+});
+
+test("computeFocus: returns null mostAtRisk when all on track or ahead", () => {
+  const t = makeTrackable();
+  const latest = new Map([["t1", makeRow({ value: 1500, pace_target: 700 })]]);
+  const result = computeFocus(latest, [t]);
+  assert.equal(result.mostAtRisk, null);
+  assert.equal(result.aheadCount, 1);
+});

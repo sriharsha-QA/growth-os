@@ -1,24 +1,99 @@
 @import "tailwindcss";
 
 @theme {
-  /* palette: field instrument — paper, ink, one green */
   --color-paper: #fafaf7;
   --color-ink: #16181d;
   --color-line: #e5e5e0;
   --color-muted: #6b7280;
   --color-accent: #0f7b5f;
+  --color-accent-light: #e1f5ee;
+  --color-accent-dark: #085041;
   --color-warn: #b45309;
+  --color-warn-light: #faeeda;
   --color-info: #2563eb;
   --color-danger: #b3261e;
+  --color-danger-light: #fcebeb;
+
+  --color-surface: #ffffff;
+  --color-surface-raised: #f5f5f2;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
+/* ── Light mode (default) ── */
+:root {
+  --bg:        #fafaf7;
+  --bg2:       #f2f2ef;
+  --bg3:       #eaeae7;
+  --surface:   #ffffff;
+  --border:    #e5e5e0;
+  --border2:   #d0d0cb;
+  --text:      #16181d;
+  --text2:     #4b5563;
+  --text3:     #6b7280;
+  --accent:    #0f7b5f;
+  --accent-bg: #e1f5ee;
+  --accent-t:  #085041;
+  --warn:      #b45309;
+  --warn-bg:   #fef3c7;
+  --danger:    #b3261e;
+  --danger-bg: #fcebeb;
+  --info:      #2563eb;
+  --info-bg:   #eff6ff;
+}
+
+/* ── Dark mode ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #0f1117;
+    --bg2:       #161820;
+    --bg3:       #1e2028;
+    --surface:   #1a1c24;
+    --border:    #2a2c36;
+    --border2:   #3a3c48;
+    --text:      #f0f0ee;
+    --text2:     #a8a8a4;
+    --text3:     #6b7280;
+    --accent:    #1aad7f;
+    --accent-bg: #0a2e22;
+    --accent-t:  #5dd3a8;
+    --warn:      #f59e0b;
+    --warn-bg:   #27200a;
+    --danger:    #f87171;
+    --danger-bg: #2e0d0d;
+    --info:      #60a5fa;
+    --info-bg:   #0f1e38;
+  }
+}
+
+/* Tailwind dark: class-based fallback (for components that need it) */
+.dark {
+  --bg:        #0f1117;
+  --bg2:       #161820;
+  --bg3:       #1e2028;
+  --surface:   #1a1c24;
+  --border:    #2a2c36;
+  --border2:   #3a3c48;
+  --text:      #f0f0ee;
+  --text2:     #a8a8a4;
+  --text3:     #6b7280;
+  --accent:    #1aad7f;
+  --accent-bg: #0a2e22;
+  --accent-t:  #5dd3a8;
+}
+
 body {
-  background: var(--color-paper);
-  color: var(--color-ink);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth colour transitions for dark mode toggle */
+*, *::before, *::after {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.05s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
