@@ -9,16 +9,14 @@
   --color-accent-light: #e1f5ee;
   --color-accent-dark:  #085041;
   --color-warn:         #b45309;
-  --color-warn-light:   #fef3c7;
   --color-info:         #2563eb;
   --color-danger:       #b3261e;
-  --color-danger-light: #fcebeb;
   --font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* ── Semantic tokens ── */
+/* ── Light tokens ── */
 :root {
   --bg:        #fafaf7;
   --bg2:       #f2f2ef;
@@ -34,20 +32,21 @@
   --accent-t:  #065c44;
   --warn:      #b45309;
   --warn-bg:   #fef3c7;
-  --warn-t:    #7c3a05;
   --danger:    #b3261e;
   --danger-bg: #fcebeb;
-  --danger-t:  #7f1d1a;
   --info:      #2563eb;
   --info-bg:   #eff6ff;
-  --info-t:    #1e40af;
+
+  /* Header blur needs semi-transparent bg */
+  --bg-blur: rgba(250,250,247,0.85);
 }
 
+/* ── Dark tokens ── */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg:        #0d0f14;
     --bg2:       #13151d;
-    --bg3:       #1a1c26;
+    --bg3:       #1d1f29;
     --surface:   #161820;
     --border:    #252730;
     --border2:   #32343f;
@@ -59,18 +58,18 @@
     --accent-t:  #4dd8a4;
     --warn:      #f59e0b;
     --warn-bg:   #201908;
-    --warn-t:    #fbbf24;
     --danger:    #f87171;
     --danger-bg: #250d0d;
-    --danger-t:  #fca5a5;
     --info:      #60a5fa;
     --info-bg:   #0c1827;
-    --info-t:    #93c5fd;
+
+    --bg-blur: rgba(13,15,20,0.85);
   }
 }
 
 /* ── Base ── */
 html { scroll-behavior: smooth; }
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -79,23 +78,35 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Tailwind @theme overrides so old class names still work ── */
-.text-muted     { color: var(--text3); }
-.text-ink       { color: var(--text); }
-.bg-paper       { background: var(--bg); }
-.border-line    { border-color: var(--border); }
-.text-accent    { color: var(--accent); }
-.text-danger    { color: var(--danger); }
-.text-warn      { color: var(--warn); }
-.bg-accent\/5   { background: var(--accent-bg); }
-.bg-accent\/10  { background: var(--accent-bg); }
-.bg-warn\/5     { background: var(--warn-bg); }
-.bg-warn\/10    { background: var(--warn-bg); }
-.border-warn\/40 { border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
-.border-accent\/30 { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
-.border-accent\/40 { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
-.text-accent { color: var(--accent); }
-.bg-ink\/5  { background: color-mix(in srgb, var(--text) 5%, transparent); }
+/* Only transition interactive elements — not everything (causes scroll jank) */
+a, button, input, [role="button"] {
+  transition: color 0.1s ease, background-color 0.12s ease, border-color 0.12s ease, opacity 0.1s ease;
+}
+
+/* Tailwind shims — only what components actually use */
+.text-muted      { color: var(--text3); }
+.text-ink        { color: var(--text); }
+.text-accent     { color: var(--accent); }
+.text-danger     { color: var(--danger); }
+.text-warn       { color: var(--warn); }
+.bg-paper        { background: var(--bg); }
+.border-line     { border-color: var(--border); }
+.bg-accent\/5    { background: var(--accent-bg); }
+.bg-accent\/10   { background: var(--accent-bg); }
+.border-accent\/30  { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.border-accent\/40  { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.bg-ink\/5       { background: color-mix(in srgb, var(--text) 5%, transparent); }
+
+/* ── Touch targets: minimum 44px on mobile ── */
+@media (max-width: 767px) {
+  button, [role="button"], a {
+    min-height: 44px;
+  }
+  /* Exception: pill badges and inline links don't need 44px */
+  .badge, .link-inline {
+    min-height: unset;
+  }
+}
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {

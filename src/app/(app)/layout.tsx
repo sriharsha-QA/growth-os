@@ -8,7 +8,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header style={{
         position: "sticky", top: 0, zIndex: 20,
         borderBottom: "0.5px solid var(--border)",
-        background: "var(--bg)",
+        background: "var(--bg-blur)",
         backdropFilter: "saturate(180%) blur(12px)",
         WebkitBackdropFilter: "saturate(180%) blur(12px)",
       }}>

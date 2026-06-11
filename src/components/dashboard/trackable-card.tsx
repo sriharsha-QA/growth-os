@@ -129,11 +129,11 @@ export function TrackableCard({ trackable, latest }: { trackable: Trackable; lat
     <div style={{
       background: "var(--surface)",
       border: "0.5px solid var(--border)",
-      borderLeft: `3px solid ${pace.accent}`,
       borderRadius: "16px",
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
+      boxShadow: `inset 3px 0 0 ${pace.accent}`,
     }}>
       {/* ── Top section ── */}
       <div style={{ padding: "18px 18px 0" }}>

@@ -44,14 +44,14 @@ export function MobileTabBar() {
       WebkitBackdropFilter: "saturate(180%) blur(12px)",
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
-      <div style={{ maxWidth: "420px", margin: "0 auto", display: "flex" }}>
+      <div style={{ maxWidth: "640px", margin: "0 auto", display: "flex" }}>
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);
           return (
             <Link key={href} href={href} style={{
               flex: 1, display: "flex", flexDirection: "column",
               alignItems: "center", gap: "3px",
-              padding: "10px 0 8px",
+              padding: "12px 0 10px",
               fontSize: "10px", fontWeight: active ? 500 : 400,
               color: active ? "var(--accent)" : "var(--text3)",
               textDecoration: "none", letterSpacing: "0.02em",
