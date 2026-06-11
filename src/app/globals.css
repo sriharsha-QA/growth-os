@@ -1,28 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  --color-paper: #fafaf7;
-  --color-ink: #16181d;
-  --color-line: #e5e5e0;
-  --color-muted: #6b7280;
-  --color-accent: #0f7b5f;
+  --color-paper:        #fafaf7;
+  --color-ink:          #16181d;
+  --color-line:         #e5e5e0;
+  --color-muted:        #6b7280;
+  --color-accent:       #0f7b5f;
   --color-accent-light: #e1f5ee;
-  --color-accent-dark: #085041;
-  --color-warn: #b45309;
-  --color-warn-light: #faeeda;
-  --color-info: #2563eb;
-  --color-danger: #b3261e;
+  --color-accent-dark:  #085041;
+  --color-warn:         #b45309;
+  --color-warn-light:   #fef3c7;
+  --color-info:         #2563eb;
+  --color-danger:       #b3261e;
   --color-danger-light: #fcebeb;
 
-  --color-surface: #ffffff;
-  --color-surface-raised: #f5f5f2;
-
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* ── Light mode (default) ── */
+/* ── Light mode ── */
 :root {
   --bg:        #fafaf7;
   --bg2:       #f2f2ef;
@@ -35,67 +32,70 @@
   --text3:     #6b7280;
   --accent:    #0f7b5f;
   --accent-bg: #e1f5ee;
-  --accent-t:  #085041;
+  --accent-t:  #065c44;
   --warn:      #b45309;
   --warn-bg:   #fef3c7;
+  --warn-t:    #7c3a05;
   --danger:    #b3261e;
   --danger-bg: #fcebeb;
+  --danger-t:  #7f1d1a;
   --info:      #2563eb;
   --info-bg:   #eff6ff;
+  --info-t:    #1e40af;
 }
 
 /* ── Dark mode ── */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg:        #0f1117;
-    --bg2:       #161820;
-    --bg3:       #1e2028;
-    --surface:   #1a1c24;
-    --border:    #2a2c36;
-    --border2:   #3a3c48;
-    --text:      #f0f0ee;
-    --text2:     #a8a8a4;
-    --text3:     #6b7280;
-    --accent:    #1aad7f;
-    --accent-bg: #0a2e22;
-    --accent-t:  #5dd3a8;
+    --bg:        #0d0f14;
+    --bg2:       #14161e;
+    --bg3:       #1a1c26;
+    --surface:   #161820;
+    --border:    #252730;
+    --border2:   #32343f;
+    --text:      #eeecea;
+    --text2:     #9a9a96;
+    --text3:     #64686f;
+    --accent:    #19b882;
+    --accent-bg: #082b1e;
+    --accent-t:  #4dd8a4;
     --warn:      #f59e0b;
-    --warn-bg:   #27200a;
+    --warn-bg:   #221b08;
+    --warn-t:    #fbbf24;
     --danger:    #f87171;
-    --danger-bg: #2e0d0d;
+    --danger-bg: #280d0d;
+    --danger-t:  #fca5a5;
     --info:      #60a5fa;
-    --info-bg:   #0f1e38;
+    --info-bg:   #0d1a2e;
+    --info-t:    #93c5fd;
   }
 }
 
-/* Tailwind dark: class-based fallback (for components that need it) */
-.dark {
-  --bg:        #0f1117;
-  --bg2:       #161820;
-  --bg3:       #1e2028;
-  --surface:   #1a1c24;
-  --border:    #2a2c36;
-  --border2:   #3a3c48;
-  --text:      #f0f0ee;
-  --text2:     #a8a8a4;
-  --text3:     #6b7280;
-  --accent:    #1aad7f;
-  --accent-bg: #0a2e22;
-  --accent-t:  #5dd3a8;
-}
+/* ── Base ── */
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Smooth colour transitions for dark mode toggle */
-*, *::before, *::after {
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.05s ease;
+/* ── Safe area for mobile (notch/home bar) ── */
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
 }
 
+/* ── Tailwind Utilities using CSS vars ── */
+.bg-surface   { background: var(--surface); }
+.bg-bg        { background: var(--bg); }
+.text-text     { color: var(--text); }
+.text-text2    { color: var(--text2); }
+.text-text3    { color: var(--text3); }
+.border-border { border-color: var(--border); }
+
+/* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
